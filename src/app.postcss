@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@tailwind variants;
+
+/* gold-nouveau theme */
+@font-face {
+	font-family: 'Quicksand';
+	src: url('/fonts/Quicksand.ttf');
+	font-display: swap;
+}
+
+body {
+	height: 100dvh;
+}
+
+.p-responsive {
+	@apply p-2 sm:p-4 md:p-6 lg:p-8 xl:p-10 2xl:p-12;
+}
+
+.contents-when-children:has(> *) {
+	@apply contents;
+}
+
+th {
+	@apply text-center;
+}
