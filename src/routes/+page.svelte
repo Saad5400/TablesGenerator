@@ -253,14 +253,14 @@
 	$: populateTables(courses);
 	$: console.log(tables);
 
-	function getGroup(table: Table, day: number, period: number) {
+	function getGroup(table: Table, day: number, period: number): CourseGroup {
 		let group = null;
 		table.courses.forEach((g, p) => {
 			if (p.day == day && p.period == period) {
 				group = g;
 			}
 		});
-		return group;
+		return group!;
 	}
 </script>
 
