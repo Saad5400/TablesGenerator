@@ -128,7 +128,7 @@
 
 	let tables: Table[] = [];
 
-	$: if (courses) {
+	function populateTables(courses: Course[]) {
 		// Reset tables
 		tables = [];
 
@@ -154,7 +154,9 @@
 				table.courses.set(period, group);
 			});
 
-			tables.push(table);
+			if (table.courses.size > 0) {
+				tables.push(table);
+			}
 		});
 
 		// Make the rest of the tables using the rest of the courses
@@ -187,7 +189,7 @@
 						}
 					});
 
-					if (!conflict && clone.courses.size >= courses.length - 1) {
+					if (!conflict && clone.courses.size) {
 						clonedTables.push(clone);
 					}
 				});
@@ -195,6 +197,8 @@
 
 			tables = clonedTables;
 		});
+
+		tables = tables.filter((table) => table.courses.size >= courses.length - 1);
 
 		// calculate the days and hours of each table
 
@@ -244,6 +248,19 @@
 				}
 			}
 		});
+	}
+
+	$: populateTables(courses);
+	$: console.log(tables);
+
+	function getGroup(table: Table, day: number, period: number) {
+		let group = null;
+		table.courses.forEach((g, p) => {
+			if (p.day == day && p.period == period) {
+				group = g;
+			}
+		});
+		return group;
 	}
 </script>
 
@@ -320,41 +337,43 @@
 								bind:value={group.teacher}
 								on:input={(e) => handleGroupsInput(e, i, j, 'teacher')}
 							/>
-							{#each group.periods as period, k}
-								<div class="grid grid-cols-2 gap-2">
-									<select
-										class="select variant-form-material"
-										bind:value={period.day}
-										on:input={(e) => handlePeriodsInput(e, i, j, k, 'day')}
-									>
-										<option value={null}>Day</option>
-										<option value="1">Sunday</option>
-										<option value="2">Monday</option>
-										<option value="3">Tuesday</option>
-										<option value="4">Wednesday</option>
-										<option value="5">Thursday</option>
-									</select>
-									<select
-										class="select variant-form-material"
-										bind:value={period.period}
-										on:input={(e) => handlePeriodsInput(e, i, j, k, 'period')}
-									>
-										<option value={null}>Period</option>
-										<option value="1">1</option>
-										<option value="2">2</option>
-										<option value="3">3</option>
-										<option value="4">4</option>
-										<option value="5">5</option>
-										<option value="6">6</option>
-										<option value="7">7</option>
-										<option value="8">8</option>
-										<option value="9">9</option>
-										<option value="10">10</option>
-										<option value="11">11</option>
-										<option value="12">12</option>
-									</select>
-								</div>
-							{/each}
+							<div>
+								{#each group.periods as period, k}
+									<div class="grid grid-cols-2 gap-2">
+										<select
+											class="select variant-form-material"
+											bind:value={period.day}
+											on:input={(e) => handlePeriodsInput(e, i, j, k, 'day')}
+										>
+											<option value={null}>Day</option>
+											<option value="1">Sunday</option>
+											<option value="2">Monday</option>
+											<option value="3">Tuesday</option>
+											<option value="4">Wednesday</option>
+											<option value="5">Thursday</option>
+										</select>
+										<select
+											class="select variant-form-material"
+											bind:value={period.period}
+											on:input={(e) => handlePeriodsInput(e, i, j, k, 'period')}
+										>
+											<option value={null}>Period</option>
+											<option value="1">1</option>
+											<option value="2">2</option>
+											<option value="3">3</option>
+											<option value="4">4</option>
+											<option value="5">5</option>
+											<option value="6">6</option>
+											<option value="7">7</option>
+											<option value="8">8</option>
+											<option value="9">9</option>
+											<option value="10">10</option>
+											<option value="11">11</option>
+											<option value="12">12</option>
+										</select>
+									</div>
+								{/each}
+							</div>
 						</div>
 					{/each}
 				</div>
@@ -365,10 +384,10 @@
 	<!---------------- Auto Generated Tables ---------------->
 	<section class="space-y-4">
 		{#if tables.length > 0 && tables[0].courses.size > 0}
-			{#each tables as table}
+			{#each tables as table, tableIndex}
 				<div>
 					<h4 class="h4 w-full text-center bg-surface-700 p-2">
-						{table.days} Days, {table.hours} Hours
+						#{tableIndex}: {table.days} Days, {table.hours} Hours
 					</h4>
 					<table class="table variant-glass">
 						<thead>
@@ -385,14 +404,15 @@
 								<tr>
 									{#each [...Array(5).keys()] as j}
 										<td class="contents-when-children">
-											{#each [...table.courses].filter(([period, _]) => period.day == j + 1 && period.period == i + 1) as [period, group]}
+											{#if getGroup(table, j + 1, i + 1)}
+												{@const group = getGroup(table, j + 1, i + 1)}
 												<div class="space-y-1 text-center bg-surface-600 text-surface-50 p-2">
 													<span class="text-sm">{group.course}</span>
 													<br />
 													<span class="text-xs">g: {group.group}</span>
 													<span class="text-xs">t: {group.teacher}</span>
 												</div>
-											{/each}
+											{/if}
 										</td>
 									{/each}
 								</tr>
