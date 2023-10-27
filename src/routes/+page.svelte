@@ -102,7 +102,6 @@
 			].periods.filter((_, i) => i !== periodIndex);
 		}
 	}
-
 	function generateTables(courses: Course[]): Table[] {
 		let result: Table[] = [];
 
@@ -193,7 +192,6 @@
 
 		return result;
 	}
-
 	function periodExist(group: CourseGroup, day: number, period: number) {
 		for (let i = 0; i < group.periods.length; i++) {
 			const groupPeriod = group.periods[i];
@@ -203,7 +201,6 @@
 		}
 		return false;
 	}
-
 	function getMaxPeriod(table: Table) {
 		let max = 0;
 		for (let i = 0; i < table.courses.length; i++) {
@@ -334,37 +331,41 @@
 							<div>
 								{#each group.periods as period, k}
 									<div class="grid grid-cols-2 gap-2">
-										<select
-											class="select variant-form-material"
-											bind:value={period.day}
-											on:input={(e) => handlePeriodsInput(e, i, j, k, 'day')}
-										>
-											<option value={null}>Day</option>
-											<option value="1">Sunday</option>
-											<option value="2">Monday</option>
-											<option value="3">Tuesday</option>
-											<option value="4">Wednesday</option>
-											<option value="5">Thursday</option>
-										</select>
-										<select
-											class="select variant-form-material"
-											bind:value={period.period}
-											on:input={(e) => handlePeriodsInput(e, i, j, k, 'period')}
-										>
-											<option value={null}>Period</option>
-											<option value="1">1</option>
-											<option value="2">2</option>
-											<option value="3">3</option>
-											<option value="4">4</option>
-											<option value="5">5</option>
-											<option value="6">6</option>
-											<option value="7">7</option>
-											<option value="8">8</option>
-											<option value="9">9</option>
-											<option value="10">10</option>
-											<option value="11">11</option>
-											<option value="12">12</option>
-										</select>
+										<label class="label">
+											<select
+												class="select variant-form-material"
+												bind:value={period.day}
+												on:input={(e) => handlePeriodsInput(e, i, j, k, 'day')}
+											>
+												<option value={null}>Day</option>
+												<option value="1">Sunday</option>
+												<option value="2">Monday</option>
+												<option value="3">Tuesday</option>
+												<option value="4">Wednesday</option>
+												<option value="5">Thursday</option>
+											</select>
+										</label>
+										<label class="label">
+											<select
+												class="select variant-form-material"
+												bind:value={period.period}
+												on:input={(e) => handlePeriodsInput(e, i, j, k, 'period')}
+											>
+												<option value={null}>Period</option>
+												<option value="1">1</option>
+												<option value="2">2</option>
+												<option value="3">3</option>
+												<option value="4">4</option>
+												<option value="5">5</option>
+												<option value="6">6</option>
+												<option value="7">7</option>
+												<option value="8">8</option>
+												<option value="9">9</option>
+												<option value="10">10</option>
+												<option value="11">11</option>
+												<option value="12">12</option>
+											</select>
+										</label>
 									</div>
 								{/each}
 							</div>
@@ -414,7 +415,10 @@
 														target: `popupHover${periodIndex}${dayIndex}`,
 														placement: 'top'
 													}}
-													<div class="card p-4 variant-glass-surface" data-popup="popupHover{periodIndex}{dayIndex}">
+													<div
+														class="card p-4 variant-glass-surface"
+														data-popup="popupHover{periodIndex}{dayIndex}"
+													>
 														<p>
 															Course: {group.course}<br />
 															Group: {group.group}<br />

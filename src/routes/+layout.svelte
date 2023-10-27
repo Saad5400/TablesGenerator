@@ -15,6 +15,11 @@
 	});
 </script>
 
+<svelte:head>
+	<title>Courses Tables Generator</title>
+	<meta name="description" content="Generate all the possible tables for this term's courses!" />
+</svelte:head>
+
 <Toast />
 
 <slot />
