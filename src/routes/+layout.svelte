@@ -5,10 +5,13 @@
 	import { computePosition, autoUpdate, flip, shift, offset, arrow } from '@floating-ui/dom';
 	import { storePopup } from '@skeletonlabs/skeleton';
 	import { autoModeWatcher } from '@skeletonlabs/skeleton';
+	import { onMount } from 'svelte';
 	
 	storePopup.set({ computePosition, autoUpdate, flip, shift, offset, arrow });
-</script>
 
-<svelte:head>{@html `<script>${autoModeWatcher.toString()} autoModeWatcher();</script>`}</svelte:head>
+	onMount(() => {
+		autoModeWatcher();
+	});
+</script>
 
 <slot />

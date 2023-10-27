@@ -23,7 +23,7 @@ interface Course {
 	groups: CourseGroup[];
 }
 interface Table {
-	courses: Map<CoursePeriod, CourseGroup>;
+	courses: CourseGroup[];
 	days?: number;
 	hours?: number;
 }

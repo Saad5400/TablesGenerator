@@ -22,12 +22,6 @@
 			groups: [getEmptyGroup()]
 		};
 	}
-
-	let courses: Course[] = data.searchParams.get('courses')
-		? JSON.parse(data.searchParams.get('courses')!)
-		: [getEmptyCourse()];
-	let validCoursesData = true;
-
 	function handleCoursesDataInput(event: Event) {
 		const target = event.target as HTMLTextAreaElement;
 		const value = target.value;
@@ -39,7 +33,6 @@
 			validCoursesData = false;
 		}
 	}
-
 	function handleCoursesInput(event: Event, index: number, proprtey: keyof Course) {
 		// @ts-ignore
 		courses[index][proprtey] = (event.target as HTMLInputElement).value;
@@ -52,7 +45,6 @@
 			courses = courses.filter((_, i) => i !== index);
 		}
 	}
-
 	function handleGroupsInput(
 		event: Event,
 		courseIndex: number,
@@ -76,7 +68,6 @@
 			courses[courseIndex].groups = courses[courseIndex].groups.filter((_, i) => i !== groupIndex);
 		}
 	}
-
 	function handlePeriodsInput(
 		event: Event,
 		courseIndex: number,
@@ -110,158 +101,140 @@
 		}
 	}
 
-	function hasStringified(map: Map<CoursePeriod, CourseGroup>, period: CoursePeriod) {
-		period = JSON.parse(JSON.stringify(period));
-		period.day = parseInt(period.day as any);
-		period.period = parseInt(period.period as any);
-		let has = null;
-		map.forEach((_, key) => {
-			key = JSON.parse(JSON.stringify(key));
-			key.day = parseInt(key.day as any);
-			key.period = parseInt(key.period as any);
-			if (JSON.stringify(key) === JSON.stringify(period)) {
-				has = key;
+	function generateTables(courses: Course[]): Table[] {
+		let result: Table[] = [];
+
+		function backtrack(remainingCourses: Course[], currentTable: Table) {
+			// If we've gone through all courses, push the current table to the result
+			if (remainingCourses.length === 0) {
+				result.push(currentTable);
+				return;
+			}
+
+			const [firstCourse, ...restCourses] = remainingCourses;
+
+			for (const group of firstCourse.groups) {
+				// Clone current table and add the new group to its courses
+				const newTable = {
+					...currentTable,
+					courses: currentTable.courses.concat([group])
+				};
+
+				backtrack(restCourses, newTable);
+			}
+		}
+
+		backtrack(courses, { courses: [] });
+
+		// remove tables with no groups
+		result.forEach((table) => {
+			table.courses = table.courses.filter((course) => course.group);
+		});
+		// remove tables with not enough courses
+		result = result.filter((table) => {
+			return table.courses.length >= courses.length - 1;
+		});
+		// remove tables with duplicate periods
+		result = result.filter((table) => {
+			let periods: string[] = [];
+			for (let i = 0; i < table.courses.length; i++) {
+				for (let j = 0; j < table.courses[i].periods.length; j++) {
+					const period = table.courses[i].periods[j];
+					if (period.day && period.period) {
+						const periodString = `${period.day}-${period.period}`;
+						if (periods.includes(periodString)) {
+							return false;
+						} else {
+							periods.push(periodString);
+						}
+					}
+				}
+			}
+			return true;
+		});
+		// calculate days and hours for each table
+		result.forEach((table) => {
+			let days: number[] = [];
+			let minPeriod = new Map<number, number>();
+			let maxPeriod = new Map<number, number>();
+			for (let i = 0; i < table.courses.length; i++) {
+				for (let j = 0; j < table.courses[i].periods.length; j++) {
+					const period = table.courses[i].periods[j];
+					if (period.day && period.period) {
+						if (!days.includes(period.day)) {
+							days.push(period.day);
+						}
+
+						if (minPeriod.has(period.day)) {
+							minPeriod.set(period.day, Math.min(minPeriod.get(period.day)!, period.period));
+						} else {
+							minPeriod.set(period.day, period.period);
+						}
+						if (maxPeriod.has(period.day)) {
+							maxPeriod.set(period.day, Math.max(maxPeriod.get(period.day)!, period.period));
+						} else {
+							maxPeriod.set(period.day, period.period);
+						}
+					}
+				}
+			}
+			table.days = days.length;
+			table.hours = 0;
+			for (const [day, min] of minPeriod) {
+				table.hours += maxPeriod.get(day)! - min + 1;
 			}
 		});
-		return has ?? false;
+		// order by less days then less hours
+		result = result.sort((a, b) => {
+			return a.days! - b.days! ? a.days! - b.days! : a.hours! - b.hours!;
+		});
+
+		return result;
 	}
 
+	function periodExist(group: CourseGroup, day: number, period: number) {
+		for (let i = 0; i < group.periods.length; i++) {
+			const groupPeriod = group.periods[i];
+			if (groupPeriod.day == day && groupPeriod.period == period) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	function getMaxPeriod(table: Table) {
+		let max = 0;
+		for (let i = 0; i < table.courses.length; i++) {
+			for (let j = 0; j < table.courses[i].periods.length; j++) {
+				const period = table.courses[i].periods[j];
+				if (period.day && period.period) {
+					max = Math.max(max, period.period);
+				}
+			}
+		}
+		return max;
+	}
+	function getMinPeriod(table: Table) {
+		let min = Infinity;
+		for (let i = 0; i < table.courses.length; i++) {
+			for (let j = 0; j < table.courses[i].periods.length; j++) {
+				const period = table.courses[i].periods[j];
+				if (period.day && period.period) {
+					min = Math.min(min, period.period);
+				}
+			}
+		}
+		return min;
+	}
+
+	const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
+	let courses: Course[] = data.searchParams.get('courses')
+		? JSON.parse(data.searchParams.get('courses')!)
+		: [getEmptyCourse()];
+	let validCoursesData = true;
 	let tables: Table[] = [];
 
-	function populateTables(courses: Course[]) {
-		// Reset tables
-		tables = [];
-
-		// Populate groups with their courses
-		courses.forEach((course) => {
-			course.groups.forEach((group) => {
-				group.course = course.name;
-			});
-		});
-
-		// Make the first table using the first course
-		const firstCourse = courses[0];
-
-		firstCourse.groups.forEach((group) => {
-			const table: Table = {
-				courses: new Map<CoursePeriod, CourseGroup>()
-			};
-
-			group.periods.forEach((period) => {
-				if (!period.day || !period.period) {
-					return;
-				}
-				table.courses.set(period, group);
-			});
-
-			if (table.courses.size > 0) {
-				tables.push(table);
-			}
-		});
-
-		// Make the rest of the tables using the rest of the courses
-		// by cloning the first table and adding the new course
-		courses.slice(1).forEach((course) => {
-			const clonedTables: Table[] = [];
-
-			course.groups.forEach((group) => {
-				tables.forEach((table) => {
-					const clone: Table = {
-						courses: new Map<CoursePeriod, CourseGroup>()
-					};
-
-					table.courses.forEach((group, period) => {
-						clone.courses.set(period, group);
-					});
-
-					let conflict = false;
-
-					group.periods.forEach((period) => {
-						// skip anything that is null or undefined
-						if (!period.day || !period.period) {
-							return;
-						}
-
-						if (hasStringified(clone.courses, period)) {
-							conflict = true;
-						} else {
-							clone.courses.set(period, group);
-						}
-					});
-
-					if (!conflict && clone.courses.size) {
-						clonedTables.push(clone);
-					}
-				});
-			});
-
-			tables = clonedTables;
-		});
-
-		tables = tables.filter((table) => table.courses.size >= courses.length - 1);
-
-		// calculate the days and hours of each table
-
-		tables.forEach((table) => {
-			const days = new Set<number>();
-			let daysPeriodsInterval: Map<number, [number, number]> = new Map();
-
-			table.courses.forEach((_, period) => {
-				days.add(period.day!);
-
-				if (!daysPeriodsInterval.has(period.day!)) {
-					daysPeriodsInterval.set(period.day!, [period.period!, period.period!]);
-				} else {
-					const interval = daysPeriodsInterval.get(period.day!)!;
-					if (period.period! < interval[0]) {
-						interval[0] = period.period!;
-					}
-					if (period.period! > interval[1]) {
-						interval[1] = period.period!;
-					}
-				}
-			});
-
-			table.days = days.size;
-
-			let hours = 0;
-
-			daysPeriodsInterval.forEach((interval) => {
-				hours += interval[1] - interval[0] + 1;
-			});
-
-			table.hours = hours;
-		});
-
-		tables = tables.sort((a, b) => {
-			if (a.days! > b.days!) {
-				return 1;
-			} else if (a.days! < b.days!) {
-				return -1;
-			} else {
-				if (a.hours! > b.hours!) {
-					return 1;
-				} else if (a.hours! < b.hours!) {
-					return -1;
-				} else {
-					return 0;
-				}
-			}
-		});
-	}
-
-	$: populateTables(courses);
-	$: console.log(tables);
-
-	function getGroup(table: Table, day: number, period: number): CourseGroup {
-		let group = null;
-		table.courses.forEach((g, p) => {
-			if (p.day == day && p.period == period) {
-				group = g;
-			}
-		});
-		return group!;
-	}
+	$: tables = generateTables(courses);
 </script>
 
 <main class="container h-full mx-auto p-responsive">
@@ -381,45 +354,56 @@
 		{/each}
 	</section>
 	<br />
+	<!---------------- Generate button ---------------->
+	<!-- <section>
+		<button
+			class="btn w-full variant-glass-surface"
+			disabled={!validCoursesData}
+			on:click={() => populateTables(courses)}
+		>
+			Generate
+		</button>
+	</section>
+	<br /> -->
 	<!---------------- Auto Generated Tables ---------------->
-	<section class="space-y-4">
-		{#if tables.length > 0 && tables[0].courses.size > 0}
+	<section class="space-y-4 max-h-[100dvh] overflow-y-auto">
+		{#if tables.length > 0 && tables[0].courses.length > 0}
 			{#each tables as table, tableIndex}
-				<div>
-					<h4 class="h4 w-full text-center bg-surface-700 p-2">
-						#{tableIndex}: {table.days} Days, {table.hours} Hours
-					</h4>
-					<table class="table variant-glass">
+				{@const maxPeriod = getMaxPeriod(table)}
+				<div class="overflow-x-auto">
+					<table class="table">
 						<thead>
 							<tr>
-								<th>Sunday</th>
-								<th>Monday</th>
-								<th>Tuesday</th>
-								<th>Wednesday</th>
-								<th>Thursday</th>
+								<th />
+								{#each days as day}
+									<th>{day}</th>
+								{/each}
 							</tr>
 						</thead>
 						<tbody>
-							{#each [...Array(12).keys()] as i}
+							{#each Array(maxPeriod).fill(null) as _, periodIndex}
 								<tr>
-									{#each [...Array(5).keys()] as j}
-										<td class="contents-when-children">
-											{#if getGroup(table, j + 1, i + 1)}
-												{@const group = getGroup(table, j + 1, i + 1)}
-												<div class="space-y-1 text-center bg-surface-600 text-surface-50 p-2">
-													<span class="text-sm">{group.course}</span>
-													<br />
-													<span class="text-xs">g: {group.group}</span>
-													<span class="text-xs">t: {group.teacher}</span>
-												</div>
-											{/if}
+									<th>{periodIndex + 1}</th>
+									{#each days as _, dayIndex}
+										<td class="text-center">
+											{#each table.courses as group}
+												{#if periodExist(group, dayIndex + 1, periodIndex + 1)}
+													{group.course}
+												{/if}
+											{/each}
 										</td>
 									{/each}
 								</tr>
 							{/each}
 						</tbody>
+						<tfoot>
+							<tr>
+								<th colspan="6">Table #{tableIndex + 1}, {table.days} days, {table.hours} hours</th>
+							</tr>
+						</tfoot>
 					</table>
 				</div>
+				<hr />
 			{/each}
 		{:else}
 			<div class="flex flex-col items-center justify-center space-y-4">
