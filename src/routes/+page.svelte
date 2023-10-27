@@ -33,15 +33,15 @@
 			validCoursesData = false;
 		}
 	}
-	function handleCoursesInput(event: Event, index: number, proprtey: keyof Course) {
+	function handleCoursesInput(event: Event, index: number, property: keyof Course) {
 		// @ts-ignore
-		courses[index][proprtey] = (event.target as HTMLInputElement).value;
+		courses[index][property] = (event.target as HTMLInputElement).value;
 
 		courses = [...courses];
 
-		if (index === courses.length - 1 && courses[index][proprtey] !== getEmptyCourse()[proprtey]) {
+		if (index === courses.length - 1 && courses[index][property] !== getEmptyCourse()[property]) {
 			courses = [...courses, getEmptyCourse()];
-		} else if (index < courses.length - 1 && !courses[index][proprtey]) {
+		} else if (index < courses.length - 1 && !courses[index][property]) {
 			courses = courses.filter((_, i) => i !== index);
 		}
 	}
@@ -49,21 +49,22 @@
 		event: Event,
 		courseIndex: number,
 		groupIndex: number,
-		proprtey: keyof CourseGroup
+		property: keyof CourseGroup
 	) {
 		// @ts-ignore
-		courses[courseIndex].groups[groupIndex][proprtey] = (event.target as HTMLInputElement).value;
+		courses[courseIndex].groups[groupIndex][property] = (event.target as HTMLInputElement).value;
+		courses[courseIndex].groups[groupIndex].course = courses[courseIndex].name;
 
 		courses = [...courses];
 
 		if (
 			groupIndex === courses[courseIndex].groups.length - 1 &&
-			courses[courseIndex].groups[groupIndex][proprtey] !== getEmptyGroup()[proprtey]
+			courses[courseIndex].groups[groupIndex][property] !== getEmptyGroup()[property]
 		) {
 			courses[courseIndex].groups = [...courses[courseIndex].groups, getEmptyGroup()];
 		} else if (
 			groupIndex < courses[courseIndex].groups.length - 1 &&
-			!courses[courseIndex].groups[groupIndex][proprtey]
+			!courses[courseIndex].groups[groupIndex][property]
 		) {
 			courses[courseIndex].groups = courses[courseIndex].groups.filter((_, i) => i !== groupIndex);
 		}
@@ -73,10 +74,10 @@
 		courseIndex: number,
 		groupIndex: number,
 		periodIndex: number,
-		proprtey: keyof CoursePeriod
+		property: keyof CoursePeriod
 	) {
 		// @ts-ignore
-		courses[courseIndex].groups[groupIndex].periods[periodIndex][proprtey] = (
+		courses[courseIndex].groups[groupIndex].periods[periodIndex][property] = (
 			event.target as HTMLInputElement
 		).value;
 
@@ -84,8 +85,8 @@
 
 		if (
 			periodIndex === courses[courseIndex].groups[groupIndex].periods.length - 1 &&
-			courses[courseIndex].groups[groupIndex].periods[periodIndex][proprtey] !==
-				getEmptyPeriod()[proprtey]
+			courses[courseIndex].groups[groupIndex].periods[periodIndex][property] !==
+				getEmptyPeriod()[property]
 		) {
 			courses[courseIndex].groups[groupIndex].periods = [
 				...courses[courseIndex].groups[groupIndex].periods,
@@ -93,7 +94,7 @@
 			];
 		} else if (
 			periodIndex < courses[courseIndex].groups[groupIndex].periods.length - 1 &&
-			!courses[courseIndex].groups[groupIndex].periods[periodIndex][proprtey]
+			!courses[courseIndex].groups[groupIndex].periods[periodIndex][property]
 		) {
 			courses[courseIndex].groups[groupIndex].periods = courses[courseIndex].groups[
 				groupIndex
@@ -366,7 +367,7 @@
 	</section>
 	<br /> -->
 	<!---------------- Auto Generated Tables ---------------->
-	<section class="space-y-4 max-h-[100dvh] overflow-y-auto">
+	<section class="space-y-4">
 		{#if tables.length > 0 && tables[0].courses.length > 0}
 			{#each tables as table, tableIndex}
 				{@const maxPeriod = getMaxPeriod(table)}
