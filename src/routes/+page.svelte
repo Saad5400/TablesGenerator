@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { isCourse } from '$lib/index';
+	import { getToastStore, popup, type PopupSettings } from '@skeletonlabs/skeleton';
 	import type { PageData } from './$types';
 	export let data: PageData;
 
@@ -234,6 +235,7 @@
 		: [getEmptyCourse()];
 	let validCoursesData = true;
 	let tables: Table[] = [];
+	const toastStore = getToastStore();
 
 	$: tables = generateTables(courses);
 </script>
@@ -254,7 +256,13 @@
 					<button
 						class="btn btn-sm variant-glass-secondary"
 						disabled={!validCoursesData}
-						on:click={() => navigator.clipboard.writeText(JSON.stringify(courses, null, 2))}
+						on:click={() => {
+							navigator.clipboard.writeText(JSON.stringify(courses, null, 2));
+							toastStore.trigger({
+								message: 'Copied to clipboard',
+								background: 'variant-glass-surface'
+							});
+						}}
 					>
 						Copy
 					</button>
@@ -271,6 +279,18 @@
 								}
 							});
 						}}>Paste</button
+					>
+					<button
+						class="btn btn-sm variant-glass-secondary"
+						on:click={() => {
+							const link = new URL(window.location.href);
+							link.searchParams.set('courses', JSON.stringify(courses));
+							navigator.clipboard.writeText(link.href);
+							toastStore.trigger({
+								message: 'Link copied to clipboard',
+								background: 'variant-glass-surface'
+							});
+						}}>Share</button
 					>
 				</span>
 			</div>
@@ -389,7 +409,22 @@
 										<td class="text-center">
 											{#each table.courses as group}
 												{#if periodExist(group, dayIndex + 1, periodIndex + 1)}
-													{group.course}
+													{@const popupHover = {
+														event: 'hover',
+														target: `popupHover${periodIndex}${dayIndex}`,
+														placement: 'top'
+													}}
+													<div class="card p-4 variant-glass-surface" data-popup="popupHover{periodIndex}{dayIndex}">
+														<p>
+															Course: {group.course}<br />
+															Group: {group.group}<br />
+															Teacher: {group.teacher}<br />
+														</p>
+														<div class="arrow variant-glass-surface" />
+													</div>
+													<div class="[&>*]:pointer-events-none" use:popup={popupHover}>
+														{group.course}
+													</div>
 												{/if}
 											{/each}
 										</td>
